@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}About Us - DeployZen{% endblock %}
+
+{% block content %}
+  <style>
+    .glass-card {
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(8px);
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 60px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .glass-card h1, .glass-card h2 {
+      color: aquamarine;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .glass-card p, .glass-card li {
+      color: #f0f0f0;
+      font-size: 18px;
+      line-height: 1.6;
+    }
+
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+      margin-bottom: 60px;
+    }
+
+    .image-card {
+      background: #fff;
+      color: #000;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+      text-align: center;
+      padding: 20px;
+      transition: transform 0.3s ease;
+    }
+
+    .image-card:hover {
+      transform: scale(1.05);
+    }
+
+    .image-card img {
+      max-height: 160px;
+      width: 100%;
+      object-fit: cover;
+      border-radius: 10px;
+      margin-bottom: 12px;
+    }
+
+    .impact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .impact-card {
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid #00ffd055;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      transition: transform 0.3s ease;
+    }
+
+    .impact-card:hover {
+      transform: scale(1.05);
+    }
+
+    .impact-card p:first-child {
+      font-size: 2.5rem;
+      color: #00ffd0;
+      font-weight: bold;
+    }
+
+    .cta-banner {
+      background: linear-gradient(to right, #2563EB, #22C55E);
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      color: white;
+    }
+
+    .cta-banner a {
+      background: #fff;
+      color: gr;
+      padding: 14px 30px;
+      border-radius: 50px;
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 20px;
+      display: inline-block;
+      transition: transform 0.3s ease;
+    }
+
+    .cta-banner a:hover {
+      transform: scale(1.05);
+      background: #f4f4f4;
+    }
+  </style>
+
+  <!-- About Section -->
+  <section class="glass-card">
+    <h1>About DeployZen</h1>
+    <p class="text-center max-w-3xl mx-auto">
+      Welcome to DeployZen! We are your dedicated partner for seamless and efficient project deployment.
+      Our platform is designed to empower developers and teams with robust tools and scalable
+      infrastructure to bring your innovative ideas to life with unparalleled ease and speed.
+      Experience the zen of deployment with us.
+    </p>
+  </section>
+
+  <!-- Image Showcase -->
+  <section class="image-grid">
+    <div class="image-card">
+      <img src="{{ url_for('static', filename='images/gitdeployimg.jpg') }}" alt="GitHub Deployment" />
+      <p>GitHub Deployment Process</p>
+    </div>
+    <div class="image-card">
+      <img src="{{ url_for('static', filename='images/ziphostingimg.jpg') }}" alt="ZIP Upload" />
+      <p>ZIP Upload & Hosting</p>
+    </div>
+    <div class="image-card">
+      <img src="{{ url_for('static', filename='images/liveprojectimg.jpg') }}" alt="Live Projects" />
+      <p>Live Hosted Projects Showcase</p>
+    </div>
+  </section>
+
+  <!-- What We Offer -->
+  <section class="glass-card flex flex-col lg:flex-row gap-8 items-center">
+    <div class="lg:w-1/2">
+      <h2>WHAT WE OFFER</h2>
+      <ul class="list-disc pl-5 space-y-2">
+        <li>Comprehensive Project Management</li>
+        <li>Automated Deployment Pipelines</li>
+        <li>Scalable Cloud Infrastructure</li>
+        <li>Real-time Analytics & Monitoring</li>
+        <li>24/7 Expert Support</li>
+        <li>Customizable Environments</li>
+      </ul>
+    </div>
+    <div class="lg:w-1/2 bg-gray-50 p-6 rounded-xl border border-gray-200 flex items-center justify-center">
+      <!-- <img src="{{ url_for('static', filename='images/about.png') }}" alt="Cloud Deploy" /> -->
+    </div>
+  </section>
+
+  <!-- Our Impact -->
+  <section class="glass-card">
+    <h2>OUR IMPACT SO FAR</h2>
+    <div class="impact-grid">
+      <div class="impact-card">
+        <p>200+</p>
+        <p>Active Users</p>
+      </div>
+      <div class="impact-card">
+        <p>120+</p>
+        <p>Happy Users</p>
+      </div>
+      <div class="impact-card">
+        <p>300+</p>
+        <p>Successful Deploys</p>
+      </div>
+      <div class="impact-card">
+        <p>200+</p>
+        <p>Live Projects</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Call to Action -->
+  <section class="cta-banner">
+    <h2>Ready to deploy your next big idea?</h2>
+    <p>Join DeployZen and experience effortless project deployment today!</p>
+    <a href="{{ url_for('deployment') }}">Start Deploying Now!</a>
+  </section>
+{% endblock %}

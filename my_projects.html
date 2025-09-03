@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}My Projects - DeployZen{% endblock %}
+
+{% block content %}
+  <style>
+    :root {
+      --button-color: #04fcd1;
+      --card-bg: #121e2f;
+      --text-color: #ffffff;
+      --border-color: #1e2c44;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    main {
+      padding: 2rem;
+      color: var(--text-color);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 2rem;
+      color: var(--button-color);
+    }
+
+    .project-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 2rem;
+    }
+
+    .project-card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .project-preview {
+      width: 100%;
+      height: 200px;
+      border: none;
+    }
+
+    .project-content {
+      padding: 1rem;
+    }
+
+    .project-name {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .project-desc {
+      font-size: 0.95rem;
+      color: #cfcfcf;
+      margin-bottom: 1rem;
+    }
+
+    .project-actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .action-btn {
+      flex: 1;
+      background-color: var(--button-color);
+      color: #000;
+      font-weight: 600;
+      border: none;
+      padding: 0.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .action-btn:hover {
+      background-color: #02dab4;
+    }
+  </style>
+
+  <main>
+    <h1>My Projects</h1>
+    {% if projects and projects|length > 0 %}
+      <div class="project-grid">
+        {% for project in projects %}
+          {% if project.project_name and project.description %}
+            <div class="project-card">
+              <iframe class="project-preview"
+                src="{{ project.full_url if project.full_url and project.full_url != 'Pending...' else '' }}">
+              </iframe>
+              <div class="project-content">
+                <div class="project-name">{{ project.project_name }}</div>
+                <div class="project-desc">{{ project.description }}</div>
+                <div class="project-actions">
+                  {% if project.full_url and project.full_url != 'Pending...' %}
+                    <a href="{{ project.full_url }}" target="_blank"><button class="action-btn">View</button></a>
+                  {% else %}
+                    <button class="action-btn" disabled>Pending...</button>
+                  {% endif %}
+                  <form method="post" action="/edit/{{ project.filename }}">
+                    <button class="action-btn" type="submit">Edit</button>
+                  </form>
+                  <form method="post" action="/delete/{{ project.filename }}">
+                    <button class="action-btn" type="submit">Delete</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% else %}
+      <p style="text-align:center;">No projects uploaded yet.</p>
+    {% endif %}
+  </main>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Deployment - DeployZen{% endblock %}
+
+{% block content %}
+  <style>
+    .deployment-section {
+      padding: 80px 60px;
+      text-align: center;
+      color: #fff;
+    }
+
+    .deployment-section h1 {
+      font-size: 2.5rem;
+      color: #00ffd0;
+      margin-bottom: 40px;
+    }
+
+    .card-container {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .card {
+      background-color: rgba(0, 0, 0, 0.4);
+      border: 1px solid #00ffd088;
+      border-radius: 12px;
+      padding: 1.5rem;
+      width: 300px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 6px 28px rgba(0, 0, 0, 0.4);
+    }
+
+    .card img {
+      width: 60px;
+      margin-bottom: 1rem;
+    }
+
+    .card h2 {
+      font-size: 1.2rem;
+      margin-bottom: 0.8rem;
+      color: #00ffd0;
+    }
+
+    .card p {
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+      color: #e0e0e0;
+    }
+
+    .card button {
+      background-color: #00ffd0;
+      color: #000000;
+      border: none;
+      padding: 0.5rem 1rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .card button:hover {
+      opacity: 0.85;
+    }
+  </style>
+
+  <section class="deployment-section">
+    <h1>Choose your preferred deployment method to get your project live in seconds.</h1>
+    <div class="card-container">
+      <div class="card">
+        <img src="{{ url_for('static', filename='images/GitHub.png') }}" alt="GitHub Logo">
+        <h2>GitHub Deploy</h2>
+        <p>Deploy your website directly from a public GitHub repository.</p>
+        <button onclick="location.href='{{ url_for('github_deploy') }}'">Start with GitHub</button>
+      </div>
+      <div class="card">
+        <img src="{{ url_for('static', filename='images/manual.png') }}" alt="Manual Upload">
+        <h2>Manual Deploy</h2>
+        <p>Upload your project ZIP file and deploy it to the cloud instantly.</p>
+        <button onclick="location.href='{{ url_for('manual_deploy') }}'">Upload ZIP</button>
+      </div>
+    </div>
+  </section>
+{% endblock %}

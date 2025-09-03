@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}DeployZen{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/logo.png') }}" type="image/png">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: url('{{ url_for('static', filename='images/image6.jpg') }}') no-repeat center center fixed;
+      background-size: cover;
+      color: #ffffff;
+    }
+
+    header {
+      height: 80px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 60px;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(6px);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo img { height: 50px; transform: scale(1.6); transform-origin: left center; }
+
+    .nav-auth { display: flex; align-items: center; gap: 30px; }
+    nav ul { list-style: none; display: flex; gap: 30px; margin: 0; padding: 0; }
+
+    nav ul li a {
+      color: #fff;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    nav ul li a:hover { color: #00ffd0; }
+    nav ul li.active a {
+      color: #00ffd0;
+      font-weight: bold;
+      border-bottom: 2px solid #00ffd0;
+      padding-bottom: 2px;
+    }
+
+    .auth-buttons { display: flex; align-items: center; gap: 15px; }
+    .login-btn {
+      color: #00ffd0; background: none; border: none;
+      font-size: 16px; cursor: pointer;
+      display: flex; align-items: center;
+    }
+    .login-btn::before { content: "👤"; margin-right: 6px; }
+
+    .get-started-btn {
+      border: 1px solid #fff; background: none; color: #fff;
+      padding: 8px 16px; border-radius: 8px;
+      cursor: pointer; transition: background 0.3s;
+    }
+    .get-started-btn:hover { background-color: #00ffd0; color: #000; }
+
+    footer {
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 20px 60px;
+      color: #ccc;
+      font-size: 15px;
+      text-align: center;
+      border-top: 1px solid #00ffd088;
+    }
+
+    footer h4 {
+      color: #00ffd0;
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+
+    footer a {
+      color: #00ffd0;
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+
+  <script>
+  const cognitoDomain = "https://us-east-1hkhx0afxo.auth.us-east-1.amazoncognito.com";
+const clientId = "7aov1frss0amhmriog9n0892hl";
+const redirectUri = "https://shorturl.at/BDxSd";
+const cognitoLoginUrl = `${cognitoDomain}/login?client_id=${clientId}&response_type=token&scope=email+openid+profile&redirect_uri=${redirectUri}`;
+const cognitoLogoutUrl = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${redirectUri}`;
+
+function redirectToLogin() {
+  window.location.href = cognitoLoginUrl;
+}
+
+function redirectToLogout() {
+  localStorage.removeItem("cognito_user");
+  updateUIToLoggedOut();  // Reset UI immediately
+  window.location.href = cognitoLogoutUrl;
+}
+
+function parseHashParams(hash) {
+  const params = {};
+  hash.substring(1).split('&').forEach(part => {
+    const [key, value] = part.split('=');
+    params[key] = decodeURIComponent(value);
+  });
+  return params;
+}
+
+function decodeJWT(token) {
+  try {
+    const payload = token.split('.')[1];
+    return JSON.parse(atob(payload));
+  } catch (err) {
+    console.error("Failed to decode JWT:", err);
+    return null;
+  }
+}
+
+function updateUIWithUsername(username) {
+  const loginBtn = document.querySelector('.login-btn');
+  const getStartedBtn = document.querySelector('.get-started-btn');
+
+  if (loginBtn) {
+    loginBtn.textContent = username;
+    loginBtn.style.cursor = 'default';
+    loginBtn.onclick = null;
+  }
+
+  if (getStartedBtn) {
+    getStartedBtn.textContent = "Sign Out";
+    getStartedBtn.onclick = redirectToLogout;
+  }
+}
+
+function updateUIToLoggedOut() {
+  const loginBtn = document.querySelector('.login-btn');
+  const getStartedBtn = document.querySelector('.get-started-btn');
+
+  if (loginBtn) {
+    loginBtn.textContent = "Log In";
+    loginBtn.style.cursor = 'pointer';
+    loginBtn.onclick = redirectToLogin;
+  }
+
+  if (getStartedBtn) {
+    getStartedBtn.textContent = "Get Started";
+    getStartedBtn.onclick = redirectToLogin;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    if (window.location.hash.includes("id_token")) {
+      const params = parseHashParams(window.location.hash);
+      const payload = decodeJWT(params['id_token']);
+      const username = payload?.name || payload?.email || payload?.preferred_username;
+
+      if (username) {
+        updateUIWithUsername(username);
+        localStorage.setItem("cognito_user", username);
+      }
+
+      history.replaceState(null, "", window.location.pathname);
+    } else {
+      const saved = localStorage.getItem("cognito_user");
+      if (saved) {
+        updateUIWithUsername(saved);
+      } else {
+        updateUIToLoggedOut();
+      }
+    }
+
+    // Highlight active tab
+    document.querySelectorAll("nav ul li a").forEach(link => {
+      const href = link.getAttribute("href");
+      if (window.location.pathname === href) {
+        link.parentElement.classList.add("active");
+      }
+    });
+
+    // ✅ Protected route logic (your new requirement)
+    const user = localStorage.getItem("cognito_user");
+
+    const protectedLinks = [
+      { selector: "a[href='{{ url_for('deployment') }}']", name: "Deployment" },
+      { selector: "a[href='{{ url_for('my_projects') }}']", name: "MyProjects" }
+    ];
+
+    protectedLinks.forEach(linkInfo => {
+      const linkEl = document.querySelector(linkInfo.selector);
+      if (linkEl && !user) {
+        linkEl.addEventListener("click", function (e) {
+          e.preventDefault();
+          alert(`Please log in to access the "${linkInfo.name}" section.`);
+          redirectToLogin();
+        });
+      }
+    });
+
+  } catch (err) {
+    console.error("Auth init error:", err);
+  }
+});
+
+</script>
+
+<script src="https://d36px92opeg09i.cloudfront.net/lex-web-ui-loader.min.js"></script>
+<script>
+  var loaderOpts = {
+    baseUrl: 'https://d36px92opeg09i.cloudfront.net/',
+    shouldLoadMinDeps: true
+  };
+  var loader = new ChatBotUiLoader.IframeLoader(loaderOpts);
+  var chatbotUiConfig = {
+          /* Example of setting session attributes on parent page
+          lex: {
+            sessionAttributes: {
+              userAgent: navigator.userAgent,
+              QNAClientFilter: ''
+            }
+          }
+          */
+        };
+  loader.load(chatbotUiConfig)
+    .catch(function (error) { console.error(error); });
+</script>
+
+
+</head>
+
+<body>
+  <header>
+    <div class="logo">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="DeployZen logo" />
+    </div>
+    <div class="nav-auth">
+      <nav>
+        <ul>
+          <li><a href="{{ url_for('home') }}">Home</a></li>
+          <li><a href="{{ url_for('deployment') }}">Deployment</a></li>
+          <li><a href="{{ url_for('my_projects') }}">MyProjects</a></li>
+          <li><a href="{{ url_for('zenhub') }}">ZenHub</a></li>
+          <li><a href="{{ url_for('about') }}">About Us</a></li>
+          <!--<li><a href="{{ url_for('manual_deploy') }}">Manual Deploy</a></li>
+          <li><a href="{{ url_for('github_deploy') }}">GitHub Deploy</a></li> -->
+        </ul>
+      </nav>
+      <div class="auth-buttons">
+        <button class="login-btn" onclick="redirectToLogin()">Log In</button>
+        <button class="get-started-btn" onclick="redirectToLogin()">Get Started</button>
+      </div>
+    </div>
+  </header>
+
+  
+    {% block content %}{% endblock %}
+
+  <footer>
+    <div class="footer-content">
+      <h4>Contact Information Details :</h4>
+      <p>📧 Email: <a href="mailto:support@deployzen.com">support@deployzen.com</a></p>
+      <p>📞 Phone: +91 8332919159</p>
+    </div>
+  </footer>
+</body>
+</html>

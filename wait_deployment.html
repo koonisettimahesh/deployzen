@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Deployment Status</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; margin: 2rem; }
+    .copy-btn { margin-top: 1rem; padding: 8px 16px; background: #2563EB; color: white; border: none; border-radius: 4px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>📦 Waiting for Lambda to deploy your site...</h2>
+  <div id="status">⏳ Deployment Pending...</div>
+  <div id="link-container" style="display:none;">
+    <p>✅ Deployed! Visit:<br><a id="short-url" href="" target="_blank"></a></p>
+    <button class="copy-btn" onclick="copyURL()">📋 Copy URL</button>
+  </div>
+
+  <script>
+    const shortId = "{{ short_id }}";
+    const statusEl = document.getElementById("status");
+    const linkContainer = document.getElementById("link-container");
+    const shortUrlLink = document.getElementById("short-url");
+
+    async function checkStatus() {
+      const resp = await fetch(`/status/${shortId}`);
+      const data = await resp.json();
+
+      if (data.status === "deployed") {
+        statusEl.style.display = "none";
+        linkContainer.style.display = "block";
+        shortUrlLink.href = data.short_url;
+        shortUrlLink.textContent = data.short_url;
+        clearInterval(poller);
+      }
+    }
+
+    function copyURL() {
+      navigator.clipboard.writeText(shortUrlLink.href)
+        .then(() => alert("✅ Copied to clipboard!"))
+        .catch(err => console.error("Copy failed:", err));
+    }
+
+    const poller = setInterval(checkStatus, 3000);
+  </script>
+</body>
+</html>
