@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, session, render_template, flash, redirect, url_for
-
+import os
 from datetime import datetime
 import uuid
 import requests
@@ -11,12 +11,12 @@ app = Flask(__name__)
 
 REGION='us-east-1'
 
-app.secret_key = "your-secret-key"  # Set your secret key for session management
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "deployzen-secret-key")  # Set your secret key for session management
 s3 = boto3.client('s3',region_name=REGION)  # Initialize S3 client
 dynamodb = boto3.resource('dynamodb',region_name=REGION)
 table = dynamodb.Table('websiteurlMap')  # Your DynamoDB table
 
-BUCKET = 'aws-bucket-910'  # S3 Bucket name
+BUCKET = 'aws-bucket-deployzen'  # S3 Bucket name
 
 @app.route('/')
 def home():
@@ -109,7 +109,7 @@ def upload():
         s3.upload_fileobj(file, BUCKET, filename)
 
         # Construct the short URL and set full URL as "Pending..."
-        short_url = f"http://34.233.58.42:5000/s/{short_id}"  # Replace with your domain/IP
+        short_url = f"http://32.199.53.91:5000/s/{short_id}"  # Replace with your domain/IP
         full_url = "Pending..."
 
         # Save the file details to DynamoDB
@@ -198,7 +198,7 @@ def deploy_github():
         s3.upload_fileobj(BytesIO(r.content), BUCKET, filename)
 
         # Construct the short URL and set full URL as "Pending..."
-        short_url = f"http://34.233.58.42:5000/s/{short_id}"  # Replace with your domain/IP
+        short_url = f"http://32.199.53.91:5000/s/{short_id}"  # Replace with your domain/IP
         full_url = "Pending..."
 
         # Save the file details to DynamoDB
@@ -260,7 +260,7 @@ def delete_project(filename):
             return redirect(url_for("my_projects"))
 
         # Always delete the uploaded ZIP from the main bucket only
-        main_bucket = "aws-bucket-910"
+        main_bucket = "aws-bucket-deployzen"
         try:
             s3.delete_object(Bucket=main_bucket, Key=filename)
         except Exception as e:
@@ -292,6 +292,94 @@ def delete_project(filename):
 
 
 
+
+# ---------------- GitHub OAuth ----------------
+
+GITHUB_CLIENT_ID = os.environ.get("GITHUB_CLIENT_ID")
+GITHUB_CLIENT_SECRET = os.environ.get("GITHUB_CLIENT_SECRET")
+GITHUB_CALLBACK_URL = "http://32.199.53.91:5000/github-callback"
+
+
+@app.route('/github-login')
+def github_login():
+    next_url = request.args.get("next", "/")
+
+    # Allow only local paths
+    if not next_url.startswith("/") or next_url.startswith("//"):
+        next_url = "/"
+
+    session["oauth_next"] = next_url
+
+    github_auth_url = (
+        "https://github.com/login/oauth/authorize"
+        f"?client_id={GITHUB_CLIENT_ID}"
+        f"&redirect_uri={GITHUB_CALLBACK_URL}"
+        "&scope=read:user%20user:email"
+    )
+
+    return redirect(github_auth_url)
+
+@app.route('/github-callback')
+def github_callback():
+    code = request.args.get('code')
+
+    if not code:
+        return "GitHub authorization failed.", 400
+
+    token_response = requests.post(
+        "https://github.com/login/oauth/access_token",
+        data={
+            "client_id": GITHUB_CLIENT_ID,
+            "client_secret": GITHUB_CLIENT_SECRET,
+            "code": code,
+            "redirect_uri": GITHUB_CALLBACK_URL
+        },
+        headers={"Accept": "application/json"}
+    )
+
+    token_data = token_response.json()
+    access_token = token_data.get("access_token")
+
+    if not access_token:
+        return "Unable to obtain GitHub access token.", 400
+
+    user_response = requests.get(
+        "https://api.github.com/user",
+        headers={
+            "Authorization": f"Bearer {access_token}",
+            "Accept": "application/vnd.github+json"
+        }
+    )
+
+    user_data = user_response.json()
+
+    session['github_user'] = {
+        "login": user_data.get("login"),
+        "name": user_data.get("name"),
+        "avatar_url": user_data.get("avatar_url")
+    }
+
+    next_url = session.pop("oauth_next", "/")
+    return redirect(next_url)
+
+@app.route('/github-logout')
+def github_logout():
+    session.pop('github_user', None)
+    return redirect(url_for('home'))
+
+@app.route('/api/github-user')
+def github_user():
+    user = session.get('github_user')
+
+    if user:
+        return jsonify({
+            "logged_in": True,
+            "user": user
+        })
+
+    return jsonify({
+        "logged_in": False
+    })
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

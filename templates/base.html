@@ -88,128 +88,73 @@
     }
   </style>
 
-  <script>
-  const cognitoDomain = "https://us-east-1hkhx0afxo.auth.us-east-1.amazoncognito.com";
-const clientId = "7aov1frss0amhmriog9n0892hl";
-const redirectUri = "https://shorturl.at/BDxSd";
-const cognitoLoginUrl = `${cognitoDomain}/login?client_id=${clientId}&response_type=token&scope=email+openid+profile&redirect_uri=${redirectUri}`;
-const cognitoLogoutUrl = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${redirectUri}`;
-
-function redirectToLogin() {
-  window.location.href = cognitoLoginUrl;
+ <script>
+  function redirectToLogin(nextUrl = "/") {
+  window.location.href = "/github-login?next=" + encodeURIComponent(nextUrl);
 }
 
-function redirectToLogout() {
-  localStorage.removeItem("cognito_user");
-  updateUIToLoggedOut();  // Reset UI immediately
-  window.location.href = cognitoLogoutUrl;
-}
-
-function parseHashParams(hash) {
-  const params = {};
-  hash.substring(1).split('&').forEach(part => {
-    const [key, value] = part.split('=');
-    params[key] = decodeURIComponent(value);
-  });
-  return params;
-}
-
-function decodeJWT(token) {
-  try {
-    const payload = token.split('.')[1];
-    return JSON.parse(atob(payload));
-  } catch (err) {
-    console.error("Failed to decode JWT:", err);
-    return null;
-  }
-}
-
-function updateUIWithUsername(username) {
-  const loginBtn = document.querySelector('.login-btn');
-  const getStartedBtn = document.querySelector('.get-started-btn');
-
-  if (loginBtn) {
-    loginBtn.textContent = username;
-    loginBtn.style.cursor = 'default';
-    loginBtn.onclick = null;
+  function redirectToLogout() {
+    window.location.href = "/github-logout";
   }
 
-  if (getStartedBtn) {
-    getStartedBtn.textContent = "Sign Out";
-    getStartedBtn.onclick = redirectToLogout;
-  }
-}
+  async function checkGitHubLogin() {
+    try {
+      const response = await fetch("/api/github-user");
+      const data = await response.json();
 
-function updateUIToLoggedOut() {
-  const loginBtn = document.querySelector('.login-btn');
-  const getStartedBtn = document.querySelector('.get-started-btn');
+      const loginBtn = document.querySelector(".login-btn");
+      const getStartedBtn = document.querySelector(".get-started-btn");
 
-  if (loginBtn) {
-    loginBtn.textContent = "Log In";
-    loginBtn.style.cursor = 'pointer';
-    loginBtn.onclick = redirectToLogin;
-  }
+      if (data.logged_in) {
+        if (loginBtn) {
+          loginBtn.textContent = data.user.login;
+          loginBtn.style.cursor = "default";
+          loginBtn.onclick = null;
+        }
 
-  if (getStartedBtn) {
-    getStartedBtn.textContent = "Get Started";
-    getStartedBtn.onclick = redirectToLogin;
-  }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  try {
-    if (window.location.hash.includes("id_token")) {
-      const params = parseHashParams(window.location.hash);
-      const payload = decodeJWT(params['id_token']);
-      const username = payload?.name || payload?.email || payload?.preferred_username;
-
-      if (username) {
-        updateUIWithUsername(username);
-        localStorage.setItem("cognito_user", username);
-      }
-
-      history.replaceState(null, "", window.location.pathname);
-    } else {
-      const saved = localStorage.getItem("cognito_user");
-      if (saved) {
-        updateUIWithUsername(saved);
+        if (getStartedBtn) {
+          getStartedBtn.textContent = "Sign Out";
+          getStartedBtn.onclick = redirectToLogout;
+        }
       } else {
-        updateUIToLoggedOut();
-      }
-    }
+        if (loginBtn) {
+          loginBtn.textContent = "Log In";
+          loginBtn.onclick = redirectToLogin;
+        }
 
-    // Highlight active tab
-    document.querySelectorAll("nav ul li a").forEach(link => {
-      const href = link.getAttribute("href");
-      if (window.location.pathname === href) {
-        link.parentElement.classList.add("active");
-      }
-    });
+        if (getStartedBtn) {
+          getStartedBtn.textContent = "Get Started";
+          getStartedBtn.onclick = redirectToLogin;
+        }
 
-    // ✅ Protected route logic (your new requirement)
-    const user = localStorage.getItem("cognito_user");
+        const protectedLinks = [
+          {
+            selector: "a[href='{{ url_for('deployment') }}']",
+            name: "Deployment"
+          },
+          {
+            selector: "a[href='{{ url_for('my_projects') }}']",
+            name: "My Projects"
+          }
+        ];
 
-    const protectedLinks = [
-      { selector: "a[href='{{ url_for('deployment') }}']", name: "Deployment" },
-      { selector: "a[href='{{ url_for('my_projects') }}']", name: "MyProjects" }
-    ];
+        protectedLinks.forEach(linkInfo => {
+          const linkEl = document.querySelector(linkInfo.selector);
 
-    protectedLinks.forEach(linkInfo => {
-      const linkEl = document.querySelector(linkInfo.selector);
-      if (linkEl && !user) {
-        linkEl.addEventListener("click", function (e) {
-          e.preventDefault();
-          alert(`Please log in to access the "${linkInfo.name}" section.`);
-          redirectToLogin();
+          if (linkEl) {
+            linkEl.addEventListener("click", function (e) {
+              e.preventDefault();
+              redirectToLogin(linkEl.getAttribute("href"));
+            });
+          }
         });
       }
-    });
-
-  } catch (err) {
-    console.error("Auth init error:", err);
+    } catch (err) {
+      console.error("GitHub auth check failed:", err);
+    }
   }
-});
 
+  document.addEventListener("DOMContentLoaded", checkGitHubLogin);
 </script>
 
 <script src="https://d36px92opeg09i.cloudfront.net/lex-web-ui-loader.min.js"></script>
