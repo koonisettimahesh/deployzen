@@ -33,13 +33,23 @@ def deployment():
 @app.route('/my-projects')
 def my_projects():
     try:
-        response = table.scan()
+        github_user = session.get("github_user")
+
+        if not github_user:
+            return redirect(url_for("github_login", next="/my-projects"))
+
+        username = github_user.get("login")
+
+        response = table.scan(
+            FilterExpression=boto3.dynamodb.conditions.Attr('owner').eq(username)
+        )
         projects = response.get("Items", [])
+
         return render_template("my_projects.html", projects=projects)
+
     except Exception as e:
         print("Error fetching projects:", e)
         return "Error fetching your projects.", 500
-
 
 
 @app.route("/zenhub", methods=["GET"])
@@ -118,6 +128,7 @@ def upload():
             'short_id': short_id,
             'short_url': short_url,
             'full_url': full_url,
+            'owner': session.get("github_user", {}).get("login"),
             #'email': email,
             #'name': name,
             'project_name': project_name,
@@ -207,6 +218,7 @@ def deploy_github():
             'short_id': short_id,
             'short_url': short_url,
             'full_url': full_url,
+            'owner': session.get("github_user", {}).get("login"),
             #'email': email,
             'name': name,
             'project_name': project_name,
