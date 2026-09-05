@@ -24,7 +24,8 @@ def lambda_handler(event, context):
         s3.download_file(bucket_name, object_key, tmp_zip)
 
         # Generate unique bucket
-        new_bucket = f"{file_id}-{str(uuid.uuid4())[:6]}".lower()
+        safe_file_id = "".join(c for c in file_id.lower() if c.isalnum() or c in "-.")
+        new_bucket = f"{safe_file_id}-{str(uuid.uuid4())[:6]}"
 
         # Create bucket
         if region == 'us-east-1':
